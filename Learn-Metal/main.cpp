@@ -13,9 +13,81 @@
 #include <QuartzCore/QuartzCore.hpp>
 
 #include <iostream>
+#include <fstream>
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    //NS::AutoreleasePool* autoreleasepool = NS::AutoreleasePool::alloc()->init();
+
+    // 1) Device + queue
+    MTL::Device* device = MTL::CreateSystemDefaultDevice();
+    if (!device) { std::cerr << "No Metal device.\n"; return 1; }
+    MTL::CommandQueue* queue = device->newCommandQueue();
+    
+    // 2) Make a library from source
+    NS::Error* err = nullptr;
+    auto lib = device->newDefaultLibrary();
+    if (!lib) {
+        std::cerr << "Library load error: "
+                  << (err ? err->localizedDescription()->utf8String() : "unknown")
+                  << "\n";
+        return 1;
+    }
+    
+    // 3) Pipeline
+    MTL::Function* fn = lib->newFunction(NS::String::string("double_it", NS::UTF8StringEncoding));
+    if (!fn) { std::cerr << "Missing function.\n"; return 1; }
+
+    MTL::ComputePipelineState* pso = device->newComputePipelineState(fn, &err);
+    if (!pso) {
+        std::cerr << "PSO error: " << (err ? err->localizedDescription()->utf8String() : "unknown") << "\n";
+        return 1;
+    }
+    
+    // 4) Buffers (use Shared on Apple Silicon for simplest CPU<->GPU sharing)
+    const size_t N = 1024;
+    const size_t bytes = N * sizeof(float);
+    std::vector<float> hostIn(N), hostOut(N);
+
+    for (size_t i = 0; i < N; ++i) hostIn[i] = float(i);
+
+    MTL::Buffer* inBuf  = device->newBuffer(bytes, MTL::ResourceStorageModeShared);
+    MTL::Buffer* outBuf = device->newBuffer(bytes, MTL::ResourceStorageModeShared);
+
+    std::memcpy(inBuf->contents(), hostIn.data(), bytes);
+
+    // 5) Record commands
+    MTL::CommandBuffer* cb = queue->commandBuffer();
+    MTL::ComputeCommandEncoder* enc = cb->computeCommandEncoder();
+
+    enc->setComputePipelineState(pso);
+    enc->setBuffer(inBuf,  0, 0);
+    enc->setBuffer(outBuf, 0, 1);
+    
+    // Choose a simple launch config
+    const NS::UInteger threadsPerThreadgroup = std::min<NS::UInteger>(256, pso->maxTotalThreadsPerThreadgroup());
+    const NS::UInteger threadsPerGrid        = N;
+
+    // Use dispatchThreads for exact grid sizing
+    enc->dispatchThreads(MTL::Size(threadsPerGrid, 1, 1),
+                         MTL::Size(threadsPerThreadgroup, 1, 1));
+    enc->endEncoding();
+
+    cb->commit();
+    cb->waitUntilCompleted();
+
+    // 6) Read back
+    std::memcpy(hostOut.data(), outBuf->contents(), bytes);
+    std::cout << "out[0]=" << hostOut[0]
+              << "  out[7]=" << hostOut[7]
+              << "  out[last]=" << hostOut[N-1] << "\n";
+
+    // 7) Cleanup
+    outBuf->release();
+    inBuf->release();
+    pso->release();
+    fn->release();
+    lib->release();
+    queue->release();
+    device->release();
     return 0;
 }
