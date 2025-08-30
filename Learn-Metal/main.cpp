@@ -16,7 +16,7 @@
 #include <fstream>
 
 int main(int argc, const char * argv[]) {
-    //init device & buffer
+    //init Metal Context
     MTL::Device* device = MTL::CreateSystemDefaultDevice();
     if (!device) { std::cerr << "No Metal device.\n"; return 1; }
     MTL::CommandQueue* queue = device->newCommandQueue();
@@ -46,12 +46,12 @@ int main(int argc, const char * argv[]) {
     const size_t bytes = N * sizeof(float);
     std::vector<float> hostIn(N), hostOut(N);
 
-    for (size_t i = 0; i < N; ++i) hostIn[i] = float(i);
+    for (size_t i = 0; i < N; ++i) hostIn[i] = float(i); // fill input
 
     MTL::Buffer* inBuf  = device->newBuffer(bytes, MTL::ResourceStorageModeShared);
     MTL::Buffer* outBuf = device->newBuffer(bytes, MTL::ResourceStorageModeShared);
 
-    std::memcpy(inBuf->contents(), hostIn.data(), bytes);
+    std::memcpy(inBuf->contents(), hostIn.data(), bytes); //fill the input buffer with info
 
     //Record commands
     MTL::CommandBuffer* cb = queue->commandBuffer();
