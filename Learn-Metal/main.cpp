@@ -16,14 +16,12 @@
 #include <fstream>
 
 int main(int argc, const char * argv[]) {
-    //NS::AutoreleasePool* autoreleasepool = NS::AutoreleasePool::alloc()->init();
-
-    // 1) Device + queue
+    //init device & buffer
     MTL::Device* device = MTL::CreateSystemDefaultDevice();
     if (!device) { std::cerr << "No Metal device.\n"; return 1; }
     MTL::CommandQueue* queue = device->newCommandQueue();
     
-    // 2) Make a library from source
+    //init GPU kernel
     NS::Error* err = nullptr;
     auto lib = device->newDefaultLibrary();
     if (!lib) {
@@ -33,7 +31,7 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
     
-    // 3) Pipeline
+    // bring function and create compute pipeline
     MTL::Function* fn = lib->newFunction(NS::String::string("double_it", NS::UTF8StringEncoding));
     if (!fn) { std::cerr << "Missing function.\n"; return 1; }
 
@@ -43,7 +41,7 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
     
-    // 4) Buffers (use Shared on Apple Silicon for simplest CPU<->GPU sharing)
+    //Create buffers
     const size_t N = 1024;
     const size_t bytes = N * sizeof(float);
     std::vector<float> hostIn(N), hostOut(N);
@@ -55,7 +53,7 @@ int main(int argc, const char * argv[]) {
 
     std::memcpy(inBuf->contents(), hostIn.data(), bytes);
 
-    // 5) Record commands
+    //Record commands
     MTL::CommandBuffer* cb = queue->commandBuffer();
     MTL::ComputeCommandEncoder* enc = cb->computeCommandEncoder();
 

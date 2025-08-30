@@ -123,7 +123,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 924B0CC72E63652400ACE8B8 /* Build configuration list for PBXProject "Learn-Metal" */;
+			buildConfigurationList = 924B0CC72E63652400ACE8B8 /* Build configuration list for PBXProject "Learn-GPU-Programming" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -291,7 +291,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		924B0CC72E63652400ACE8B8 /* Build configuration list for PBXProject "Learn-Metal" */ = {
+		924B0CC72E63652400ACE8B8 /* Build configuration list for PBXProject "Learn-GPU-Programming" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				924B0CD12E63652400ACE8B8 /* Debug */,
