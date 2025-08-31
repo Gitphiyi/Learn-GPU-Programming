@@ -75,10 +75,10 @@ int main(int argc, const char * argv[]) {
 
     // 6) Read back
     std::memcpy(hostOut.data(), outBuf->contents(), bytes);
-    std::cout << "out[0]=" << hostOut[0]
-              << "  out[7]=" << hostOut[7]
-              << "  out[last]=" << hostOut[N-1] << "\n";
-
+    
+    for(int i = 0; i < hostOut.size(); i++) {
+        std::cout << "out[" << i << "]= " << hostOut[i] << std::endl;
+    }
     // 7) Cleanup
     outBuf->release();
     inBuf->release();
